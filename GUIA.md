@@ -32,13 +32,13 @@ Este proyecto usa su propio arnés: `AGENTS.md`, `feature_list.json`, `progress.
 
 ## Dónde se crean los proyectos (convención de carpetas)
 
-Cada proyecto nuevo nace como **carpeta hermana del generador** dentro de `C:\Users\<usuario>\Projects\`:
+Cada proyecto nuevo nace como **carpeta hermana del generador** dentro de tu carpeta de proyectos (`~/Projects/` en Mac y Linux, `C:\Users\<usuario>\Projects\` en Windows):
 
 ```
-C:\Users\<usuario>\Projects\
-├── Harness_Generator\      ← la fábrica (este proyecto)
-├── Facturacion\            ← proyecto generado, con su arnés
-├── Inventario\             ← proyecto generado, con su arnés
+Projects/
+├── Harness_Generator/       ← la fábrica (este proyecto)
+├── Facturacion/             ← proyecto generado, con su arnés
+├── Inventario/              ← proyecto generado, con su arnés
 └── ...
 ```
 
@@ -65,7 +65,7 @@ El agente redacta `PROYECTO.md` con todo lo recogido y te lo presenta. Revísalo
 El agente ejecuta (o tú, a mano):
 
 ```bash
-node bin/create-harnessed-project.mjs crear C:\ruta\al\nuevo-proyecto --project-name "Nombre" --owner "Jose" --purpose "propósito en una frase"
+node bin/create-harnessed-project.mjs crear /ruta/al/nuevo-proyecto --project-name "Nombre" --owner "Jose" --purpose "propósito en una frase"
 ```
 
 Esto crea en la carpeta destino: `AGENTS.md`, `feature_list.json`, `progress.md`, `session-handoff.md`, `PROYECTO.md` e `init.sh`, detectando el stack (Node, Python, Go, Rust, Java) y sus comandos de verificación. Nunca sobrescribe archivos existentes salvo con `--force`.
@@ -77,7 +77,7 @@ El agente sustituye el `feature_list.json` de plantilla por tus funcionalidades 
 ### Paso 5 — Auditar
 
 ```bash
-node bin/create-harnessed-project.mjs validar C:\ruta\al\nuevo-proyecto
+node bin/create-harnessed-project.mjs validar /ruta/al/nuevo-proyecto
 ```
 
 Puntúa los 5 subsistemas y señala el más débil. Objetivo: 100/100.

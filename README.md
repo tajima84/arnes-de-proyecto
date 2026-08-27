@@ -91,8 +91,10 @@ cada pieza tiene la forma correcta. **No juzga la calidad del contenido.** Un ar
 texto vacío puede puntuar 100. Es un detector de arneses ausentes o incompletos, no un revisor.
 Úsalo para saber si te falta una pieza, no para saber si tu proyecto está bien planteado.
 
-**Windows.** El generador es multiplataforma (Node), pero el `init.sh` que crea es bash. En
-Windows hace falta **Git Bash o WSL**; en PowerShell o CMD no se ejecuta.
+**Mac, Linux y Windows.** El generador es multiplataforma: solo necesita Node 18 o superior y
+no tiene dependencias. En **Mac y Linux no hace falta nada más**: bash ya viene con el sistema.
+El `init.sh` que genera es bash, así que en **Windows** hace falta **Git Bash o WSL**; en
+PowerShell o CMD no se ejecuta.
 
 **`init.sh` falla a propósito si no detecta el stack.** Cuando la carpeta no permite adivinar
 los comandos de verificación, el script generado contiene un `exit 1` con un aviso. Es

@@ -1,0 +1,12 @@
+{
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "[Nombre de la funcionalidad, en palabras del dueño]",
+      "description": "[Qué hace y, sobre todo, cómo se comprueba con los ojos que funciona]",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    }
+  ]
+}

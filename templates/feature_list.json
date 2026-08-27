@@ -1,0 +1,44 @@
+{
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Configuración del proyecto",
+      "description": "Confirmar que el proyecto instala dependencias, ejecuta la verificación y arranca desde un checkout limpio",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-002",
+      "name": "Primera funcionalidad de cara al usuario",
+      "description": "Sustituye este marcador por el primer comportamiento concreto que el agente debe implementar",
+      "dependencies": ["feat-001"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-003",
+      "name": "Cobertura de verificación",
+      "description": "Añadir o confirmar tests, type-check, lint o verificación manual para la funcionalidad activa",
+      "dependencies": ["feat-002"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-004",
+      "name": "Actualización de documentación",
+      "description": "Actualizar README, notas de arquitectura o documentación de producto afectada por la funcionalidad implementada",
+      "dependencies": ["feat-003"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-005",
+      "name": "Limpieza y traspaso",
+      "description": "Registrar la evidencia de verificación, actualizar progress.md y dejar clara la ruta para la siguiente sesión",
+      "dependencies": ["feat-004"],
+      "status": "not-started",
+      "evidence": ""
+    }
+  ]
+}

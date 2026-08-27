@@ -1,0 +1,9 @@
+# Configuración local del agente: NUNCA se publica.
+# Puede contener historial de permisos y comandos de shell pre-aprobados
+# que quien clone el repositorio heredaría sin saberlo.
+.claude/
+
+node_modules/
+*.log
+.DS_Store
+Thumbs.db

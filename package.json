@@ -1,0 +1,40 @@
+{
+  "name": "create-harnessed-project",
+  "version": "0.1.0",
+  "description": "CLI que crea proyectos nuevos con el arnés adecuado según los principios de Harness Engineering (instrucciones, estado, verificación, alcance y ciclo de vida).",
+  "type": "module",
+  "bin": {
+    "create-harnessed-project": "bin/create-harnessed-project.mjs"
+  },
+  "scripts": {
+    "test": "node --test",
+    "lint": "node --check bin/create-harnessed-project.mjs && node --check src/cli.mjs && node --check src/scaffold.mjs && node --check src/validate.mjs && node --check src/utils.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "harness-engineering",
+    "ai-agents",
+    "scaffolding",
+    "cli"
+  ],
+  "license": "MIT",
+  "author": "Jose Ignacio Cantero Martel",
+  "files": [
+    "bin",
+    "src",
+    "templates",
+    "skill",
+    "README.md",
+    "GUIA.md",
+    "ENTREVISTA.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tajima84/arnes-de-proyecto.git"
+  },
+  "homepage": "https://github.com/tajima84/arnes-de-proyecto#readme"
+}

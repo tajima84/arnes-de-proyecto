@@ -1,0 +1,62 @@
+{
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Configuración del proyecto",
+      "description": "El proyecto instala dependencias, ejecuta lint y tests, y arranca desde un checkout limpio con ./init.sh",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "npm run lint OK; npm test 8/8 en verde (2026-07-14)"
+    },
+    {
+      "id": "feat-002",
+      "name": "Comando crear: scaffolding del arnés",
+      "description": "create-harnessed-project crear <dir> genera AGENTS.md, feature_list.json, progress.md, session-handoff.md e init.sh en español, con detección de stack (node/python/go/rust/java) y gestor de paquetes, sin sobrescribir salvo --force",
+      "dependencies": [
+        "feat-001"
+      ],
+      "status": "done",
+      "evidence": "Tests de scaffold, detección de stack y no-sobrescritura en test/cli.test.mjs; dogfooding: este repo generó su propio arnés con el CLI"
+    },
+    {
+      "id": "feat-003",
+      "name": "Comando validar: auditoría de los 5 subsistemas",
+      "description": "create-harnessed-project validar <dir> puntúa instrucciones, estado, verificación, alcance y ciclo de vida (0-100), señala el cuello de botella y lista hallazgos",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "done",
+      "evidence": "Tests de puntuación alta/baja en test/cli.test.mjs 8/8 en verde"
+    },
+    {
+      "id": "feat-004",
+      "name": "Plantillas por tipo de proyecto",
+      "description": "Añadir variantes de plantilla (web app, API, librería, script de datos) con reglas de alcance y verificación específicas",
+      "dependencies": [
+        "feat-003"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-005",
+      "name": "Publicación como paquete npm",
+      "description": "Preparar el paquete para npm publish o uso vía npx: metadatos, files, prueba de instalación global",
+      "dependencies": [
+        "feat-003"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-006",
+      "name": "Flujo conversacional de descubrimiento",
+      "description": "Protocolo ENTREVISTA.md de 8 fases para que un agente extraiga el alcance completo conversando con el propietario, y brief PROYECTO.md como fuente de verdad del que se derivan AGENTS.md y feature_list.json. El comando crear genera el brief sin sobrescribir uno existente.",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "done",
+      "evidence": "Tests de brief con marcadores sustituidos y de no-sobrescritura; npm test 10/10 en verde (2026-07-14)"
+    }
+  ]
+}

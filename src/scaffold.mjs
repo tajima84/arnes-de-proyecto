@@ -16,10 +16,36 @@ const TEMPLATES_DIR = path.join(
   'templates'
 );
 
+// Detecta una llamada al init.sh de la raíz (`init.sh`, `./init.sh`, `.\init.sh`), con o sin
+// comillas. No detecta `sub/init.sh`: el de otro proyecto del monorepo es legítimo.
+const CALLS_OWN_INIT = /(?:^|[\s;&|()'"`=])(?:\.[\\/])*init\.sh(?=$|[\s;&|()'"`])/;
+
+function parseCommands(raw) {
+  const commands = String(raw)
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean);
+  const recursive = commands.find((c) => CALLS_OWN_INIT.test(c));
+  if (recursive) {
+    throw new Error(
+      `el comando de verificación "${recursive}" ejecuta init.sh, que se llamaría a sí mismo en bucle. Quítalo de --commands.`
+    );
+  }
+  return commands;
+}
+
 function buildInitScript(commands) {
   const lines = commands.map((c) => `run "${c.replace(/"/g, '\\"')}"`).join('\n');
   return `#!/bin/bash
 set -e
+
+# Si un comando de verificación vuelve a lanzar este init.sh, se corta en vez de entrar en bucle.
+ARNES_INIT_SCRIPT="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+if [ "$ARNES_INIT_ACTIVO" = "$ARNES_INIT_SCRIPT" ]; then
+  echo "ERROR: init.sh se ha llamado a sí mismo; quita de la verificación el comando que lo ejecuta" >&2
+  exit 1
+fi
+export ARNES_INIT_ACTIVO="$ARNES_INIT_SCRIPT"
 
 echo "=== Inicialización del arnés ==="
 
@@ -75,17 +101,13 @@ async function writeGitattributes(dest, content, results) {
 export async function scaffoldHarness(target, options = {}) {
   const agentFile = options.agentFile || 'AGENTS.md';
   const force = Boolean(options.force);
+  const customCommands = options.commands ? parseCommands(options.commands) : null;
 
   await mkdir(target, { recursive: true });
 
   const stack = await detectStack(target);
   const pm = await detectPackageManager(target, options.packageManager);
-  const commands = options.commands
-    ? String(options.commands)
-        .split(',')
-        .map((c) => c.trim())
-        .filter(Boolean)
-    : await verificationCommands(target, stack, pm);
+  const commands = customCommands || (await verificationCommands(target, stack, pm));
 
   const purpose =
     options.purpose ||

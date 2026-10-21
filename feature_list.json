@@ -75,8 +75,8 @@
       "dependencies": [
         "feat-002"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "Reproducido antes del arreglo: 42 init.sh anidados en 5 s hasta el timeout. Tests de rechazo de 6 formas de llamada, de subproyecto admitido y del corte en tiempo de ejecución con bash real; npm test 15/15 desde Git Bash y desde PowerShell (2026-10-21)"
     },
     {
       "id": "feat-009",

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { scaffoldHarness } from '../src/scaffold.mjs';
 import { validateHarness } from '../src/validate.mjs';
-import { detectStack, parseArgs, renderTemplate } from '../src/utils.mjs';
+import { detectStack, exists, parseArgs, renderTemplate } from '../src/utils.mjs';
 
 async function tempDir() {
   return mkdtemp(path.join(tmpdir(), 'chp-test-'));
@@ -167,6 +167,37 @@ test('scaffoldHarness nunca sobrescribe un .gitattributes existente, ni con --fo
     const again = await scaffoldHarness(dir);
     const kept = again.results.find((r) => r.path.endsWith('.gitattributes'));
     assert.equal(kept.reason, 'ya existe');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('scaffoldHarness rechaza --commands que ejecutan el propio init.sh, sin escribir nada', async () => {
+  const dir = await tempDir();
+  try {
+    const target = path.join(dir, 'nuevo');
+    const recursive = [
+      'bash init.sh',
+      './init.sh',
+      'npm test, sh ./init.sh',
+      'npm test && bash "init.sh"',
+      "bash -c './init.sh'",
+      'bash .\\init.sh'
+    ];
+    for (const commands of recursive) {
+      await assert.rejects(scaffoldHarness(target, { commands }), /se llamaría a sí mismo/, commands);
+    }
+    assert.equal(await exists(target), false, 'no debe crear el directorio destino');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('scaffoldHarness acepta el init.sh de un subproyecto en --commands', async () => {
+  const dir = await tempDir();
+  try {
+    const result = await scaffoldHarness(dir, { commands: 'bash packages/api/init.sh,bash scripts/myinit.sh' });
+    assert.deepEqual(result.commands, ['bash packages/api/init.sh', 'bash scripts/myinit.sh']);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

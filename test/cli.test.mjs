@@ -137,3 +137,37 @@ test('scaffoldHarness no sobrescribe un PROYECTO.md existente', async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('scaffoldHarness crea .gitattributes que fija LF para los .sh', async () => {
+  const dir = await tempDir();
+  try {
+    await scaffoldHarness(dir);
+    const attributes = await readFile(path.join(dir, '.gitattributes'), 'utf8');
+    assert.match(attributes, /^\* text=auto$/m);
+    assert.match(attributes, /^\*\.sh text eol=lf$/m);
+    const init = await readFile(path.join(dir, 'init.sh'), 'utf8');
+    assert.doesNotMatch(init, /\r/, 'init.sh debe salir con LF');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('scaffoldHarness nunca sobrescribe un .gitattributes existente, ni con --force', async () => {
+  const dir = await tempDir();
+  try {
+    const own = '*.psd filter=lfs diff=lfs merge=lfs -text\n';
+    await writeFile(path.join(dir, '.gitattributes'), own);
+    const result = await scaffoldHarness(dir, { force: true });
+    assert.equal(await readFile(path.join(dir, '.gitattributes'), 'utf8'), own);
+    const entry = result.results.find((r) => r.path.endsWith('.gitattributes'));
+    assert.equal(entry.status, 'omitido');
+    assert.match(entry.reason, /\*\.sh text eol=lf/, 'debe avisar de la regla que falta');
+
+    await writeFile(path.join(dir, '.gitattributes'), `${own}*.sh text eol=lf\n`);
+    const again = await scaffoldHarness(dir);
+    const kept = again.results.find((r) => r.path.endsWith('.gitattributes'));
+    assert.equal(kept.reason, 'ya existe');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

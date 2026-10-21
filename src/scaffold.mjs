@@ -52,6 +52,22 @@ async function writeIfAllowed(dest, content, force, results, mode) {
   results.push({ path: dest, status: 'creado' });
 }
 
+// Un .gitattributes existente puede llevar reglas propias (LFS, binarios): nunca se sobrescribe,
+// ni con --force. Si no fija LF para los .sh, se avisa porque init.sh se rompería con CRLF.
+async function writeGitattributes(dest, content, results) {
+  if (!(await exists(dest))) {
+    await writeIfAllowed(dest, content, false, results);
+    return;
+  }
+  const current = await readFile(dest, 'utf8');
+  const keepsShellLf = /^(\*|\*\.sh)\s.*\beol=lf\b/m.test(current);
+  results.push({
+    path: dest,
+    status: 'omitido',
+    reason: keepsShellLf ? 'ya existe' : 'ya existe; añádele a mano: *.sh text eol=lf'
+  });
+}
+
 /**
  * Crea el arnés completo en `target`.
  * @returns {Promise<{target:string, stack:string, commands:string[], results:Array}>}
@@ -85,8 +101,9 @@ export async function scaffoldHarness(target, options = {}) {
   };
 
   const results = [];
+  // Las plantillas pueden llegar con CRLF si el generador se clonó con core.autocrlf=true.
   const template = async (name) =>
-    readFile(path.join(TEMPLATES_DIR, name), 'utf8');
+    (await readFile(path.join(TEMPLATES_DIR, name), 'utf8')).replace(/\r\n/g, '\n');
 
   await writeIfAllowed(
     path.join(target, agentFile),
@@ -130,6 +147,7 @@ export async function scaffoldHarness(target, options = {}) {
     results,
     0o755
   );
+  await writeGitattributes(path.join(target, '.gitattributes'), await template('gitattributes'), results);
 
   return { target, stack, commands, results };
 }

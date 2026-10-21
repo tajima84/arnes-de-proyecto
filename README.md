@@ -94,7 +94,8 @@ texto vacío puede puntuar 100. Es un detector de arneses ausentes o incompletos
 **Mac, Linux y Windows.** El generador es multiplataforma: solo necesita Node 18 o superior y
 no tiene dependencias. En **Mac y Linux no hace falta nada más**: bash ya viene con el sistema.
 El `init.sh` que genera es bash, así que en **Windows** hace falta **Git Bash o WSL**; en
-PowerShell o CMD no se ejecuta.
+PowerShell o CMD no se ejecuta. Con `core.autocrlf=true`, git convertiría `init.sh` a CRLF y
+Git Bash dejaría de ejecutarlo; por eso `crear` añade un `.gitattributes` que fija LF en los `.sh`.
 
 **`init.sh` falla a propósito si no detecta el stack.** Cuando la carpeta no permite adivinar
 los comandos de verificación, el script generado contiene un `exit 1` con un aviso. Es
@@ -102,7 +103,10 @@ deliberado: obliga a escribir la verificación real antes de dar nada por termin
 esa línea por tus comandos.
 
 **`--force` sobrescribe sin copia de seguridad.** Reescribe `AGENTS.md`, `PROYECTO.md` y
-`feature_list.json` si ya existen. En un proyecto en marcha, haz copia antes.
+`feature_list.json` si ya existen. En un proyecto en marcha, haz copia antes. La excepción es
+`.gitattributes`: nunca se sobrescribe, ni con `--force`, porque puede llevar reglas propias
+(LFS, binarios). Si al tuyo le falta la regla de los `.sh`, `crear` te avisa para que añadas
+`*.sh text eol=lf` a mano.
 
 **`crear` sin ruta escribe en la carpeta actual.** Pasa siempre la ruta de destino de forma
 explícita.

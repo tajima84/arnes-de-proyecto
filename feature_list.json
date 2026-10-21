@@ -57,6 +57,36 @@
       ],
       "status": "done",
       "evidence": "Tests de brief con marcadores sustituidos y de no-sobrescritura; npm test 10/10 en verde (2026-07-14)"
+    },
+    {
+      "id": "feat-007",
+      "name": ".gitattributes que protege init.sh en Windows",
+      "description": "crear genera .gitattributes con * text=auto y *.sh text eol=lf para que init.sh no se rompa con CRLF cuando core.autocrlf=true. Nunca sobrescribe un .gitattributes existente, ni con --force, y avisa si le falta la regla de *.sh",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "done",
+      "evidence": "Tests de creación y de no-sobrescritura con --force; npm test 12/12 (2026-10-21). Manual: con core.autocrlf=true, init.sh vuelve del checkout como w/lf; sin .gitattributes, como w/crlf"
+    },
+    {
+      "id": "feat-008",
+      "name": "init.sh sin recursión por --commands",
+      "description": "crear rechaza cualquier comando de --commands que ejecute el propio init.sh (antes provocaba un bucle infinito con --commands \"bash init.sh\") y el init.sh generado se corta si un comando lo vuelve a lanzar de forma indirecta",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-009",
+      "name": "Perfil documental para proyectos sin código",
+      "description": "crear --profile documental genera un init.sh que, con node, comprueba ficheros obligatorios, coherencia de feature_list.json (ids, dependencias, ciclos, done con dependencias en done y con evidence), brief aprobado y que git no versiona data/, .env ni hojas de cálculo",
+      "dependencies": [
+        "feat-007"
+      ],
+      "status": "not-started",
+      "evidence": ""
     }
   ]
 }

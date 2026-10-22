@@ -24,8 +24,13 @@
 
 ### Siguiente
 
-1. feat-004: plantillas por tipo de proyecto (el perfil documental es la primera variante)
-2. feat-005: publicación como paquete npm
+1. Hallazgos consultivos de la revisión nativa de feat-007 a feat-009 (ninguno bloqueante):
+   - `init-documental.sh:45`: la regex del BOM lleva un U+FEFF literal e invisible; usar el escape `﻿`
+   - La guarda de recursión guarda una sola ruta: dos `init.sh` que se llaman entre sí (raíz → subproyecto → raíz) no se cortan; usar una lista de rutas activas
+   - Falta un test que pase `--profile documental` por `main()` y no solo por `scaffoldHarness`
+   - Sugerencias: `.env.*` también rechaza `.env.example`; probar datos prohibidos en la raíz; ruido de `undefined` en ids ausentes; la descripción de las comprobaciones vive en tres sitios además de la plantilla
+2. feat-004: plantillas por tipo de proyecto (el perfil documental es la primera variante)
+3. feat-005: publicación como paquete npm
 
 ## Bloqueos / Riesgos
 
@@ -47,6 +52,7 @@
 - [x] Lint limpio: `npm run lint` → OK
 - [x] `crear <tmp> --agent-file CLAUDE.md` genera `.gitattributes`; con `core.autocrlf=true`, `init.sh` vuelve del checkout con LF
 - [x] `validar` da 100/100 a un proyecto relleno con perfil de código y con perfil documental
+- [x] Revisión nativa RDD de 98aae32..5833a92 (riesgo alto, 705 líneas, 4 lentes): consentida y aprobada, linaje `review-9d585f30061b9559`, autoridad quemada (2026-10-22)
 
 ## Notas para la siguiente sesión
 

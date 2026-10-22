@@ -13,8 +13,8 @@ Guía rápida de qué hay en esta carpeta y cómo usarla para crear proyectos co
 | `src/scaffold.mjs` | Genera los archivos del arnés a partir de las plantillas |
 | `src/validate.mjs` | Audita un arnés y puntúa los 5 subsistemas (0-100) |
 | `src/utils.mjs` | Detección de stack, gestor de paquetes y comandos de verificación |
-| `test/cli.test.mjs` | 17 tests automáticos del CLI |
-| `test/init.test.mjs` | 7 tests que ejecutan el `init.sh` generado en un bash real (en Windows, Git Bash) |
+| `test/cli.test.mjs` | 18 tests automáticos del CLI |
+| `test/init.test.mjs` | 8 tests que ejecutan el `init.sh` generado en un bash real (en Windows, Git Bash) |
 
 ### El método
 
@@ -98,7 +98,7 @@ node bin/create-harnessed-project.mjs --help        # ayuda
 node bin/create-harnessed-project.mjs crear <dir>    # generar arnés
 node bin/create-harnessed-project.mjs crear <dir> --profile documental  # arnés sin código
 node bin/create-harnessed-project.mjs validar <dir>  # auditar arnés
-npm test                                             # tests del generador (24)
+npm test                                             # tests del generador (26)
 ./init.sh                                            # verificación completa del generador
 ```
 

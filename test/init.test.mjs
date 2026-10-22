@@ -34,17 +34,33 @@ async function tempDir() {
   return mkdtemp(path.join(tmpdir(), 'chp-init-'));
 }
 
+// Relanza el init.sh de la raíz; el contador limita el bucle si la protección fallara.
+const RELAUNCH_ROOT_INIT =
+  'n=$(cat contador 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > contador\n' +
+  '[ "$n" -lt 5 ] || exit 3\n' +
+  'bash init.sh\n';
+
 test('init.sh se corta si un comando de verificación vuelve a lanzarlo', { skip: NO_BASH }, async () => {
   const dir = await tempDir();
   try {
     await scaffoldHarness(dir, { commands: 'bash verificar.sh' });
-    // verificar.sh relanza init.sh; el contador limita el bucle si la protección fallara.
-    await writeFile(
-      path.join(dir, 'verificar.sh'),
-      'n=$(cat contador 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > contador\n' +
-        '[ "$n" -lt 5 ] || exit 3\n' +
-        'bash init.sh\n'
-    );
+    await writeFile(path.join(dir, 'verificar.sh'), RELAUNCH_ROOT_INIT);
+    const run = sh('bash init.sh', dir);
+    assert.equal(run.status, 1, run.stdout + run.stderr);
+    assert.match(run.stderr, /init\.sh se ha llamado a sí mismo/);
+    assert.equal((await readFile(path.join(dir, 'contador'), 'utf8')).trim(), '1');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('init.sh se corta si vuelve a lanzarlo el init.sh de un subproyecto', { skip: NO_BASH }, async () => {
+  const dir = await tempDir();
+  try {
+    // raíz → sub/init.sh → relanzar.sh → init.sh de la raíz otra vez.
+    await scaffoldHarness(dir, { commands: 'bash sub/init.sh' });
+    await scaffoldHarness(path.join(dir, 'sub'), { commands: 'bash relanzar.sh' });
+    await writeFile(path.join(dir, 'relanzar.sh'), RELAUNCH_ROOT_INIT);
     const run = sh('bash init.sh', dir);
     assert.equal(run.status, 1, run.stdout + run.stderr);
     assert.match(run.stderr, /init\.sh se ha llamado a sí mismo/);
@@ -60,8 +76,8 @@ async function approveBrief(dir) {
   await writeFile(briefPath, brief.replace('**Estado:** Borrador | Aprobado', '**Estado:** Aprobado'));
 }
 
-async function writeFeatures(dir, features) {
-  await writeFile(path.join(dir, 'feature_list.json'), JSON.stringify({ features }, null, 2));
+async function writeFeatures(dir, features, prefix = '') {
+  await writeFile(path.join(dir, 'feature_list.json'), prefix + JSON.stringify({ features }, null, 2));
 }
 
 const feature = (id, status, dependencies = [], evidence = '') => ({
@@ -91,10 +107,16 @@ test('perfil documental: init.sh pasa en un proyecto relleno dentro de git', { s
   try {
     await scaffoldHarness(dir, { profile: 'documental', agentFile: 'CLAUDE.md' });
     await approveBrief(dir);
-    await writeFeatures(dir, [
-      feature('ent-001', 'done', [], 'Informe entregado y validado por el cliente'),
-      feature('ent-002', 'in-progress', ['ent-001'])
-    ]);
+    // Con BOM, como lo guardan el Bloc de notas o Out-File de Windows PowerShell 5.1.
+    const bom = String.fromCharCode(0xfeff);
+    await writeFeatures(
+      dir,
+      [
+        feature('ent-001', 'done', [], 'Informe entregado y validado por el cliente'),
+        feature('ent-002', 'in-progress', ['ent-001'])
+      ],
+      bom
+    );
     await mkdir(path.join(dir, 'docs', 'database'), { recursive: true });
     await writeFile(path.join(dir, 'docs', 'database', 'notas.md'), 'no es una carpeta data/');
     assert.equal(sh('git init -q && git add -A', dir).status, 0);

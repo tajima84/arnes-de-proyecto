@@ -129,8 +129,9 @@ esa línea por tus comandos o, si el proyecto no tiene código, genera con `--pr
 **`--commands` no puede ejecutar el propio `init.sh`.** `init.sh` ejecuta esos comandos, así
 que `--commands "bash init.sh"` lo haría llamarse a sí mismo en bucle: `crear` lo rechaza sin
 escribir nada. Si la llamada llega de forma indirecta (por ejemplo, un script de `npm test` que
-lanza `./init.sh`), el `init.sh` generado la detecta y se corta con un error. El `init.sh` de
-un subproyecto (`bash packages/api/init.sh`) sí se admite.
+lanza `./init.sh`, o el `init.sh` de un subproyecto que vuelve a lanzar el de la raíz), el
+`init.sh` generado la detecta y se corta con un error. El `init.sh` de un subproyecto
+(`bash packages/api/init.sh`) sí se admite.
 
 **`--force` sobrescribe sin copia de seguridad.** Reescribe `AGENTS.md`, `PROYECTO.md` y
 `feature_list.json` si ya existen. En un proyecto en marcha, haz copia antes. La excepción es

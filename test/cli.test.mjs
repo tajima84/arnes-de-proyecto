@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { main } from '../src/cli.mjs';
 import { scaffoldHarness } from '../src/scaffold.mjs';
 import { validateHarness } from '../src/validate.mjs';
 import { detectStack, exists, parseArgs, renderTemplate } from '../src/utils.mjs';
@@ -209,6 +210,27 @@ test('scaffoldHarness con perfil documental genera su init.sh y lista sus compro
     const agents = await readFile(path.join(dir, 'CLAUDE.md'), 'utf8');
     assert.match(agents, /- `PROYECTO\.md` con la línea `\*\*Estado:\*\* Aprobado`/);
   } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('el CLI crea el arnés documental con --profile documental', async () => {
+  const dir = await tempDir();
+  const printed = [];
+  const originalLog = console.log;
+  console.log = (...parts) => printed.push(parts.join(' '));
+  try {
+    const code = await main(['crear', dir, '--profile', 'documental', '--agent-file', 'CLAUDE.md']);
+    console.log = originalLog;
+    assert.equal(code, 0);
+    const init = await readFile(path.join(dir, 'init.sh'), 'utf8');
+    assert.match(init, /perfil documental/);
+    const output = printed.join('\n');
+    assert.match(output, /Perfil: documental/);
+    assert.match(output, /Comprobaciones de init\.sh:/);
+    assert.doesNotMatch(output, /Stack detectado/);
+  } finally {
+    console.log = originalLog;
     await rm(dir, { recursive: true, force: true });
   }
 });

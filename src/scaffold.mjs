@@ -57,13 +57,16 @@ function buildInitScript(commands) {
   return `#!/bin/bash
 set -e
 
-# Si un comando de verificación vuelve a lanzar este init.sh, se corta en vez de entrar en bucle.
+# Si un comando de verificación vuelve a lanzar este init.sh, aunque sea a través del init.sh de
+# un subproyecto, se corta en vez de entrar en bucle. ARNES_INIT_ACTIVOS lista los init.sh en curso.
 ARNES_INIT_SCRIPT="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
-if [ "$ARNES_INIT_ACTIVO" = "$ARNES_INIT_SCRIPT" ]; then
-  echo "ERROR: init.sh se ha llamado a sí mismo; quita de la verificación el comando que lo ejecuta" >&2
-  exit 1
-fi
-export ARNES_INIT_ACTIVO="$ARNES_INIT_SCRIPT"
+case ":$ARNES_INIT_ACTIVOS:" in
+  *":$ARNES_INIT_SCRIPT:"*)
+    echo "ERROR: init.sh se ha llamado a sí mismo; quita de la verificación el comando que lo ejecuta" >&2
+    exit 1
+    ;;
+esac
+export ARNES_INIT_ACTIVOS="$ARNES_INIT_ACTIVOS:$ARNES_INIT_SCRIPT"
 
 echo "=== Inicialización del arnés ==="
 

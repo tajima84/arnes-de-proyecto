@@ -42,7 +42,7 @@ node -e '
 const fs = require("fs");
 let data;
 try {
-  data = JSON.parse(fs.readFileSync("feature_list.json", "utf8").replace(/^﻿/, ""));
+  data = JSON.parse(fs.readFileSync("feature_list.json", "utf8").replace(/^\uFEFF/, ""));
 } catch (e) {
   console.error("feature_list.json no es JSON válido: " + e.message);
   process.exit(1);

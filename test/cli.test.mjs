@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { main } from '../src/cli.mjs';
 import { scaffoldHarness } from '../src/scaffold.mjs';
 import { validateHarness } from '../src/validate.mjs';
-import { detectStack, parseArgs, renderTemplate } from '../src/utils.mjs';
+import { detectStack, exists, parseArgs, renderTemplate } from '../src/utils.mjs';
 
 async function tempDir() {
   return mkdtemp(path.join(tmpdir(), 'chp-test-'));
@@ -133,6 +134,139 @@ test('scaffoldHarness no sobrescribe un PROYECTO.md existente', async () => {
     await writeFile(path.join(dir, 'PROYECTO.md'), 'brief aprobado');
     await scaffoldHarness(dir);
     assert.equal(await readFile(path.join(dir, 'PROYECTO.md'), 'utf8'), 'brief aprobado');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('scaffoldHarness crea .gitattributes que fija LF para los .sh', async () => {
+  const dir = await tempDir();
+  try {
+    await scaffoldHarness(dir);
+    const attributes = await readFile(path.join(dir, '.gitattributes'), 'utf8');
+    assert.match(attributes, /^\* text=auto$/m);
+    assert.match(attributes, /^\*\.sh text eol=lf$/m);
+    const init = await readFile(path.join(dir, 'init.sh'), 'utf8');
+    assert.doesNotMatch(init, /\r/, 'init.sh debe salir con LF');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('scaffoldHarness nunca sobrescribe un .gitattributes existente, ni con --force', async () => {
+  const dir = await tempDir();
+  try {
+    const own = '*.psd filter=lfs diff=lfs merge=lfs -text\n';
+    await writeFile(path.join(dir, '.gitattributes'), own);
+    const result = await scaffoldHarness(dir, { force: true });
+    assert.equal(await readFile(path.join(dir, '.gitattributes'), 'utf8'), own);
+    const entry = result.results.find((r) => r.path.endsWith('.gitattributes'));
+    assert.equal(entry.status, 'omitido');
+    assert.match(entry.reason, /\*\.sh text eol=lf/, 'debe avisar de la regla que falta');
+
+    await writeFile(path.join(dir, '.gitattributes'), `${own}*.sh text eol=lf\n`);
+    const again = await scaffoldHarness(dir);
+    const kept = again.results.find((r) => r.path.endsWith('.gitattributes'));
+    assert.equal(kept.reason, 'ya existe');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('scaffoldHarness rechaza --commands que ejecutan el propio init.sh, sin escribir nada', async () => {
+  const dir = await tempDir();
+  try {
+    const target = path.join(dir, 'nuevo');
+    const recursive = [
+      'bash init.sh',
+      './init.sh',
+      'npm test, sh ./init.sh',
+      'npm test && bash "init.sh"',
+      "bash -c './init.sh'",
+      'bash .\\init.sh'
+    ];
+    for (const commands of recursive) {
+      await assert.rejects(scaffoldHarness(target, { commands }), /se llamaría a sí mismo/, commands);
+    }
+    assert.equal(await exists(target), false, 'no debe crear el directorio destino');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('scaffoldHarness con perfil documental genera su init.sh y lista sus comprobaciones', async () => {
+  const dir = await tempDir();
+  try {
+    await writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { test: 'x' } }));
+    const result = await scaffoldHarness(dir, { profile: 'documental', agentFile: 'CLAUDE.md' });
+    assert.equal(result.profile, 'documental');
+    assert.equal(result.stack, null, 'el perfil documental no detecta stack');
+    assert.deepEqual(result.commands, []);
+    const init = await readFile(path.join(dir, 'init.sh'), 'utf8');
+    assert.match(init, /set -e/);
+    assert.match(init, /for f in CLAUDE\.md PROYECTO\.md feature_list\.json progress\.md session-handoff\.md \.gitattributes; do/);
+    assert.doesNotMatch(init, /\{\{[A-Z_]+\}\}|Sustituye esta línea|npm/, 'sin marcadores ni comandos de build');
+    assert.doesNotMatch(init, /\r/, 'init.sh debe salir con LF');
+    const agents = await readFile(path.join(dir, 'CLAUDE.md'), 'utf8');
+    assert.match(agents, /- `PROYECTO\.md` con la línea `\*\*Estado:\*\* Aprobado`/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('el CLI crea el arnés documental con --profile documental', async () => {
+  const dir = await tempDir();
+  const printed = [];
+  const originalLog = console.log;
+  console.log = (...parts) => printed.push(parts.join(' '));
+  try {
+    const code = await main(['crear', dir, '--profile', 'documental', '--agent-file', 'CLAUDE.md']);
+    console.log = originalLog;
+    assert.equal(code, 0);
+    const init = await readFile(path.join(dir, 'init.sh'), 'utf8');
+    assert.match(init, /perfil documental/);
+    const output = printed.join('\n');
+    assert.match(output, /Perfil: documental/);
+    assert.match(output, /Comprobaciones de init\.sh:/);
+    assert.doesNotMatch(output, /Stack detectado/);
+  } finally {
+    console.log = originalLog;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('scaffoldHarness rechaza un perfil desconocido y --commands en el perfil documental', async () => {
+  const dir = await tempDir();
+  try {
+    await assert.rejects(scaffoldHarness(dir, { profile: 'web' }), /perfil desconocido "web"/);
+    await assert.rejects(
+      scaffoldHarness(dir, { profile: 'documental', commands: 'npm test' }),
+      /--commands no aplica al perfil documental/
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('validateHarness da 100/100 a un arnés relleno en los dos perfiles', async () => {
+  for (const profile of ['codigo', 'documental']) {
+    const dir = await tempDir();
+    try {
+      await writeFile(path.join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { test: 'node --test' } }));
+      await scaffoldHarness(dir, { profile });
+      const report = await validateHarness(dir);
+      assert.equal(report.total, 100, `${profile}: ${JSON.stringify(report.scores)}`);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+});
+
+test('scaffoldHarness acepta el init.sh de un subproyecto en --commands', async () => {
+  const dir = await tempDir();
+  try {
+    const result = await scaffoldHarness(dir, { commands: 'bash packages/api/init.sh,bash scripts/myinit.sh' });
+    assert.deepEqual(result.commands, ['bash packages/api/init.sh', 'bash scripts/myinit.sh']);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

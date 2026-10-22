@@ -1,0 +1,3 @@
+# init.sh y las plantillas .sh deben conservar LF: con CRLF (core.autocrlf=true en Windows) fallan en Git Bash.
+* text=auto
+*.sh text eol=lf

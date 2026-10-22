@@ -61,11 +61,35 @@ node bin/create-harnessed-project.mjs crear mi-app \
   --owner "Jose" \
   --force
 
+# Proyecto sin código (consultoría, informes, documentación)
+node bin/create-harnessed-project.mjs crear ../informe-cliente --profile documental
+
 # Auditar el arnés de cualquier proyecto (puntúa los 5 subsistemas 0-100)
 node bin/create-harnessed-project.mjs validar /ruta/al/proyecto
 ```
 
 Instalación global opcional: `npm install -g .` y luego usa `create-harnessed-project` directamente.
+
+## Proyectos sin código: `--profile documental`
+
+En un proyecto de consultoría o de documentación no hay tests ni build que ejecutar, y el
+`init.sh` por defecto se quedaría en un `exit 1`. Con `--profile documental`, `init.sh`
+verifica el propio registro de trabajo usando `node`:
+
+1. Existen los ficheros del arnés (`AGENTS.md`/`CLAUDE.md`, `PROYECTO.md`, `feature_list.json`,
+   `progress.md`, `session-handoff.md`, `.gitattributes`).
+2. `feature_list.json` es coherente: ids únicos, toda dependencia existe, nadie depende de sí
+   mismo ni hay ciclos, ningún entregable está en `done` con una dependencia pendiente y todo
+   `done` tiene `evidence`.
+3. `PROYECTO.md` contiene `**Estado:** Aprobado`. Un brief recién generado no lo cumple: la
+   verificación falla hasta que el propietario lo aprueba.
+4. Si la carpeta está en un repositorio git, no se versiona ninguna carpeta `data/` (a cualquier
+   profundidad), ningún `.env` ni ficheros xlsx, xls o csv. La lista está al principio del
+   check y se puede ampliar.
+
+Si falta `node`, o falta `git` dentro de un repositorio, `init.sh` lo dice con un error propio.
+El perfil documental no admite `--commands`: las comprobaciones extra se añaden al final de
+`init.sh`.
 
 ## Flujo recomendado tras generar un arnés
 
@@ -94,15 +118,26 @@ texto vacío puede puntuar 100. Es un detector de arneses ausentes o incompletos
 **Mac, Linux y Windows.** El generador es multiplataforma: solo necesita Node 18 o superior y
 no tiene dependencias. En **Mac y Linux no hace falta nada más**: bash ya viene con el sistema.
 El `init.sh` que genera es bash, así que en **Windows** hace falta **Git Bash o WSL**; en
-PowerShell o CMD no se ejecuta.
+PowerShell o CMD no se ejecuta. Con `core.autocrlf=true`, git convertiría `init.sh` a CRLF y
+Git Bash dejaría de ejecutarlo; por eso `crear` añade un `.gitattributes` que fija LF en los `.sh`.
 
 **`init.sh` falla a propósito si no detecta el stack.** Cuando la carpeta no permite adivinar
 los comandos de verificación, el script generado contiene un `exit 1` con un aviso. Es
 deliberado: obliga a escribir la verificación real antes de dar nada por terminado. Sustituye
-esa línea por tus comandos.
+esa línea por tus comandos o, si el proyecto no tiene código, genera con `--profile documental`.
+
+**`--commands` no puede ejecutar el propio `init.sh`.** `init.sh` ejecuta esos comandos, así
+que `--commands "bash init.sh"` lo haría llamarse a sí mismo en bucle: `crear` lo rechaza sin
+escribir nada. Si la llamada llega de forma indirecta (por ejemplo, un script de `npm test` que
+lanza `./init.sh`, o el `init.sh` de un subproyecto que vuelve a lanzar el de la raíz), el
+`init.sh` generado la detecta y se corta con un error. El `init.sh` de un subproyecto
+(`bash packages/api/init.sh`) sí se admite.
 
 **`--force` sobrescribe sin copia de seguridad.** Reescribe `AGENTS.md`, `PROYECTO.md` y
-`feature_list.json` si ya existen. En un proyecto en marcha, haz copia antes.
+`feature_list.json` si ya existen. En un proyecto en marcha, haz copia antes. La excepción es
+`.gitattributes`: nunca se sobrescribe, ni con `--force`, porque puede llevar reglas propias
+(LFS, binarios). Si al tuyo le falta la regla de los `.sh`, `crear` te avisa para que añadas
+`*.sh text eol=lf` a mano.
 
 **`crear` sin ruta escribe en la carpeta actual.** Pasa siempre la ruta de destino de forma
 explícita.

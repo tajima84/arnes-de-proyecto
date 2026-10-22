@@ -13,7 +13,8 @@ Guía rápida de qué hay en esta carpeta y cómo usarla para crear proyectos co
 | `src/scaffold.mjs` | Genera los archivos del arnés a partir de las plantillas |
 | `src/validate.mjs` | Audita un arnés y puntúa los 5 subsistemas (0-100) |
 | `src/utils.mjs` | Detección de stack, gestor de paquetes y comandos de verificación |
-| `test/cli.test.mjs` | 10 tests automáticos |
+| `test/cli.test.mjs` | 18 tests automáticos del CLI |
+| `test/init.test.mjs` | 8 tests que ejecutan el `init.sh` generado en un bash real (en Windows, Git Bash) |
 
 ### El método
 
@@ -25,6 +26,8 @@ Guía rápida de qué hay en esta carpeta y cómo usarla para crear proyectos co
 | `templates/feature_list.json` | Plantilla del registro de funcionalidades |
 | `templates/progress.md` | Plantilla de la bitácora entre sesiones |
 | `templates/session-handoff.md` | Plantilla del traspaso de sesión |
+| `templates/gitattributes` | Plantilla del `.gitattributes`: fija LF en los `.sh` para que `init.sh` funcione en Windows |
+| `templates/init-documental.sh` | Plantilla del `init.sh` del perfil documental, para proyectos sin código |
 
 ### El arnés propio (dogfooding)
 
@@ -68,7 +71,9 @@ El agente ejecuta (o tú, a mano):
 node bin/create-harnessed-project.mjs crear /ruta/al/nuevo-proyecto --project-name "Nombre" --owner "Jose" --purpose "propósito en una frase"
 ```
 
-Esto crea en la carpeta destino: `AGENTS.md`, `feature_list.json`, `progress.md`, `session-handoff.md`, `PROYECTO.md` e `init.sh`, detectando el stack (Node, Python, Go, Rust, Java) y sus comandos de verificación. Nunca sobrescribe archivos existentes salvo con `--force`.
+Esto crea en la carpeta destino: `AGENTS.md`, `feature_list.json`, `progress.md`, `session-handoff.md`, `PROYECTO.md`, `init.sh` y `.gitattributes`, detectando el stack (Node, Python, Go, Rust, Java) y sus comandos de verificación. Nunca sobrescribe archivos existentes salvo con `--force`, y `.gitattributes` ni siquiera con `--force`.
+
+Si el proyecto no tiene código (consultoría, informes, documentación), añade `--profile documental`. En lugar de buscar tests, su `init.sh` comprueba con `node` que están los ficheros del arnés, que `feature_list.json` es coherente (ids, dependencias, ciclos, evidencia de lo terminado), que el brief figura con `**Estado:** Aprobado` y que git no versiona carpetas `data/`, `.env` ni hojas de cálculo. El detalle está en el README.
 
 ### Paso 4 — Personalizar con lo entrevistado
 
@@ -91,8 +96,9 @@ A partir de aquí, cualquier agente que trabaje en el proyecto nuevo empieza ley
 ```bash
 node bin/create-harnessed-project.mjs --help        # ayuda
 node bin/create-harnessed-project.mjs crear <dir>    # generar arnés
+node bin/create-harnessed-project.mjs crear <dir> --profile documental  # arnés sin código
 node bin/create-harnessed-project.mjs validar <dir>  # auditar arnés
-npm test                                             # tests del generador (10)
+npm test                                             # tests del generador (26)
 ./init.sh                                            # verificación completa del generador
 ```
 

@@ -61,11 +61,35 @@ node bin/create-harnessed-project.mjs crear mi-app \
   --owner "Jose" \
   --force
 
+# Proyecto sin código (consultoría, informes, documentación)
+node bin/create-harnessed-project.mjs crear ../informe-cliente --profile documental
+
 # Auditar el arnés de cualquier proyecto (puntúa los 5 subsistemas 0-100)
 node bin/create-harnessed-project.mjs validar /ruta/al/proyecto
 ```
 
 Instalación global opcional: `npm install -g .` y luego usa `create-harnessed-project` directamente.
+
+## Proyectos sin código: `--profile documental`
+
+En un proyecto de consultoría o de documentación no hay tests ni build que ejecutar, y el
+`init.sh` por defecto se quedaría en un `exit 1`. Con `--profile documental`, `init.sh`
+verifica el propio registro de trabajo usando `node`:
+
+1. Existen los ficheros del arnés (`AGENTS.md`/`CLAUDE.md`, `PROYECTO.md`, `feature_list.json`,
+   `progress.md`, `session-handoff.md`, `.gitattributes`).
+2. `feature_list.json` es coherente: ids únicos, toda dependencia existe, nadie depende de sí
+   mismo ni hay ciclos, ningún entregable está en `done` con una dependencia pendiente y todo
+   `done` tiene `evidence`.
+3. `PROYECTO.md` contiene `**Estado:** Aprobado`. Un brief recién generado no lo cumple: la
+   verificación falla hasta que el propietario lo aprueba.
+4. Si la carpeta está en un repositorio git, no se versiona ninguna carpeta `data/` (a cualquier
+   profundidad), ningún `.env` ni ficheros xlsx, xls o csv. La lista está al principio del
+   check y se puede ampliar.
+
+Si falta `node`, o falta `git` dentro de un repositorio, `init.sh` lo dice con un error propio.
+El perfil documental no admite `--commands`: las comprobaciones extra se añaden al final de
+`init.sh`.
 
 ## Flujo recomendado tras generar un arnés
 
@@ -100,7 +124,7 @@ Git Bash dejaría de ejecutarlo; por eso `crear` añade un `.gitattributes` que 
 **`init.sh` falla a propósito si no detecta el stack.** Cuando la carpeta no permite adivinar
 los comandos de verificación, el script generado contiene un `exit 1` con un aviso. Es
 deliberado: obliga a escribir la verificación real antes de dar nada por terminado. Sustituye
-esa línea por tus comandos.
+esa línea por tus comandos o, si el proyecto no tiene código, genera con `--profile documental`.
 
 **`--commands` no puede ejecutar el propio `init.sh`.** `init.sh` ejecuta esos comandos, así
 que `--commands "bash init.sh"` lo haría llamarse a sí mismo en bucle: `crear` lo rechaza sin

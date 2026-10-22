@@ -12,8 +12,12 @@ Uso:
 
 Opciones de crear:
   --agent-file AGENTS.md|CLAUDE.md   Nombre del archivo de instrucciones (por defecto AGENTS.md)
+  --profile codigo|documental        documental: proyecto sin código; init.sh comprueba el
+                                     registro, el brief y que git no versione datos
+                                     (por defecto codigo)
   --package-manager npm|pnpm|yarn|bun  Fuerza el gestor de paquetes detectado
-  --commands "cmd1,cmd2"             Comandos de verificación personalizados
+  --commands "cmd1,cmd2"             Comandos de verificación personalizados (no pueden
+                                     ejecutar init.sh; no aplica al perfil documental)
   --purpose "texto"                  Propósito del proyecto para el AGENTS.md
   --project-name "nombre"            Nombre del proyecto para el brief PROYECTO.md
   --owner "nombre"                   Propietario del proyecto para el brief
@@ -63,6 +67,7 @@ export async function main(argv) {
 
   const result = await scaffoldHarness(target, {
     agentFile: args.agentFile,
+    profile: args.profile,
     packageManager: args.packageManager,
     commands: args.commands,
     purpose: args.purpose,
@@ -71,16 +76,27 @@ export async function main(argv) {
     force: Boolean(args.force)
   });
 
+  const documental = result.profile === 'documental';
   console.log(`Arnés creado en ${result.target}`);
-  console.log(`Stack detectado: ${result.stack}`);
-  console.log('Comandos de verificación:');
-  for (const c of result.commands) console.log(`  - ${c}`);
+  if (documental) {
+    console.log('Perfil: documental (proyecto sin código)');
+    console.log('Comprobaciones de init.sh:');
+    for (const c of result.checks) console.log(`  - ${c}`);
+  } else {
+    console.log(`Stack detectado: ${result.stack}`);
+    console.log('Comandos de verificación:');
+    for (const c of result.commands) console.log(`  - ${c}`);
+  }
   console.log('');
   for (const r of result.results) {
     console.log(
       `${r.status.toUpperCase()} ${path.relative(result.target, r.path)}${r.reason ? ` (${r.reason})` : ''}`
     );
   }
-  console.log('\nSiguiente paso: sustituye los marcadores de feature_list.json por funcionalidades reales.');
+  console.log(
+    documental
+      ? '\nSiguiente paso: sustituye los marcadores de feature_list.json por los entregables reales y aprueba el brief PROYECTO.md.'
+      : '\nSiguiente paso: sustituye los marcadores de feature_list.json por funcionalidades reales.'
+  );
   return 0;
 }

@@ -85,8 +85,8 @@
       "dependencies": [
         "feat-007"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "6 tests con bash real (brief sin aprobar, proyecto relleno en git, incoherencias del registro, datos versionados, sin node, sin git) y 3 de contenido y opciones; npm test 24/24 desde Git Bash y PowerShell. validar da 100/100 a un proyecto relleno en ambos perfiles. El feature_list.json real de Martel/los-manueles (10 entregables) pasa el check 2 (2026-10-22)"
     }
   ]
 }

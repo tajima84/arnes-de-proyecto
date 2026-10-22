@@ -16,6 +16,24 @@ const TEMPLATES_DIR = path.join(
   'templates'
 );
 
+const PROFILES = ['codigo', 'documental'];
+
+// Lo que comprueba el init.sh del perfil documental, tal como se lista en AGENTS.md.
+const DOCUMENT_CHECKS = [
+  'Ficheros obligatorios del arnés presentes',
+  '`feature_list.json` coherente: ids únicos, dependencias existentes y sin ciclos, `done` solo con sus dependencias en `done` y con `evidence`',
+  '`PROYECTO.md` con la línea `**Estado:** Aprobado`',
+  'Dentro de git: ninguna carpeta `data/`, ningún `.env` ni ficheros xlsx, xls o csv versionados'
+];
+
+const DOCUMENT_REQUIRED_FILES = [
+  'PROYECTO.md',
+  'feature_list.json',
+  'progress.md',
+  'session-handoff.md',
+  '.gitattributes'
+];
+
 // Detecta una llamada al init.sh de la raíz (`init.sh`, `./init.sh`, `.\init.sh`), con o sin
 // comillas. No detecta `sub/init.sh`: el de otro proyecto del monorepo es legítimo.
 const CALLS_OWN_INIT = /(?:^|[\s;&|()'"`=])(?:\.[\\/])*init\.sh(?=$|[\s;&|()'"`])/;
@@ -94,32 +112,49 @@ async function writeGitattributes(dest, content, results) {
   });
 }
 
+function defaultPurpose(profile, stack) {
+  if (profile === 'documental') return 'Arnés del proyecto documental para trabajo fiable asistido por agentes.';
+  if (stack === 'generico') return 'Arnés del proyecto para desarrollo fiable asistido por agentes.';
+  return `Arnés del proyecto para desarrollo fiable asistido por agentes en una base de código ${stack}.`;
+}
+
+/** Lista de ficheros para un `for` de bash; entrecomilla solo los nombres que lo necesitan. */
+function shellWords(names) {
+  return names
+    .map((n) => (/^[\w.-]+$/.test(n) ? n : `'${n.replace(/'/g, `'\\''`)}'`))
+    .join(' ');
+}
+
 /**
  * Crea el arnés completo en `target`.
- * @returns {Promise<{target:string, stack:string, commands:string[], results:Array}>}
+ * @returns {Promise<{target:string, profile:string, stack:string|null, commands:string[], checks:string[], results:Array}>}
  */
 export async function scaffoldHarness(target, options = {}) {
   const agentFile = options.agentFile || 'AGENTS.md';
   const force = Boolean(options.force);
+  const profile = String(options.profile || 'codigo');
+  if (!PROFILES.includes(profile)) {
+    throw new Error(`perfil desconocido "${profile}": usa ${PROFILES.join(' o ')}`);
+  }
+  const documental = profile === 'documental';
+  if (documental && options.commands) {
+    throw new Error('--commands no aplica al perfil documental: añade tus comprobaciones al final de init.sh');
+  }
   const customCommands = options.commands ? parseCommands(options.commands) : null;
 
   await mkdir(target, { recursive: true });
 
-  const stack = await detectStack(target);
-  const pm = await detectPackageManager(target, options.packageManager);
-  const commands = customCommands || (await verificationCommands(target, stack, pm));
-
-  const purpose =
-    options.purpose ||
-    (stack === 'generico'
-      ? 'Arnés del proyecto para desarrollo fiable asistido por agentes.'
-      : `Arnés del proyecto para desarrollo fiable asistido por agentes en una base de código ${stack}.`);
+  // El perfil documental no ejecuta comandos de build: no hay stack que detectar.
+  const stack = documental ? null : await detectStack(target);
+  const pm = documental ? null : await detectPackageManager(target, options.packageManager);
+  const commands = documental ? [] : customCommands || (await verificationCommands(target, stack, pm));
+  const checks = documental ? DOCUMENT_CHECKS : commands.map((c) => `\`${c}\``);
 
   const replacements = {
     AGENT_FILE_NAME: agentFile,
-    PROJECT_PURPOSE: purpose,
+    PROJECT_PURPOSE: options.purpose || defaultPurpose(profile, stack),
     PRIMARY_VERIFICATION_COMMAND: './init.sh',
-    VERIFICATION_COMMANDS: commands.map((c) => `- \`${c}\``).join('\n')
+    VERIFICATION_COMMANDS: checks.map((c) => `- ${c}`).join('\n')
   };
 
   const results = [];
@@ -162,14 +197,13 @@ export async function scaffoldHarness(target, options = {}) {
     force,
     results
   );
-  await writeIfAllowed(
-    path.join(target, 'init.sh'),
-    buildInitScript(commands),
-    force,
-    results,
-    0o755
-  );
+  const initScript = documental
+    ? renderTemplate(await template('init-documental.sh'), {
+        FICHEROS_OBLIGATORIOS: shellWords([agentFile, ...DOCUMENT_REQUIRED_FILES])
+      })
+    : buildInitScript(commands);
+  await writeIfAllowed(path.join(target, 'init.sh'), initScript, force, results, 0o755);
   await writeGitattributes(path.join(target, '.gitattributes'), await template('gitattributes'), results);
 
-  return { target, stack, commands, results };
+  return { target, profile, stack, commands, checks, results };
 }
